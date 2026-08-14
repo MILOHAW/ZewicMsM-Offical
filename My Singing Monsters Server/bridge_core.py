@@ -413,8 +413,16 @@ async def params(request):
     return _a
 
 def server_ip():
-    configured_ip = str(SETTINGS.get('resolved_server_ip') or SETTINGS.get('server_ip') or '0.0.0.0')
-    # If configured to bind to all interfaces (0.0.0.0), detect the actual local IP for clients
+    explicit_ip = str(SETTINGS.get('server_ip') or '').strip()
+    if explicit_ip and explicit_ip != '0.0.0.0':
+        return explicit_ip
+
+    resolved_ip = str(SETTINGS.get('resolved_server_ip') or '').strip()
+    if resolved_ip and resolved_ip not in {'0.0.0.0', '127.0.0.1'}:
+        logger.info('server_ip: using cached resolved_server_ip=%s', resolved_ip)
+        return resolved_ip
+
+    configured_ip = str(SETTINGS.get('server_ip') or SETTINGS.get('resolved_server_ip') or '0.0.0.0')
     if configured_ip == '0.0.0.0':
         detected_ip = get_local_ip()
         logger.info('server_ip: configured as 0.0.0.0, detected local IP: %s', detected_ip)
@@ -438,8 +446,8 @@ def content_root():
 def sfs_block():
     _a = server_ip()
     _b = int(SETTINGS.get('game_port', 9933))
-    _c = BLUEBOX_HTTP_PORT
-    _d = BLUEBOX_HTTPS_PORT
+    _c = _b
+    _d = _b
     _e = '/BlueBox/BlueBox.do'
     _f = f'ws://{_a}:{_c}/msm/socket'
     _g = f'http://{_a}:{_c}{_e}'
