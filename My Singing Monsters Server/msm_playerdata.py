@@ -8,7 +8,7 @@ DEBUG_MAX_NUMERIC_VALUE = 999_999_999
 
 
 def _debug_currency_override_enabled():
-    return True
+    return False
 
 
 def _decode_double_bits(value):
@@ -141,24 +141,7 @@ def load_player(username):
 def _ensure_account_premium_and_unlocked(player_object):
     if not isinstance(player_object, dict):
         return
-    player_object["premium"] = 999_999_999
-    player_object["has_premium"] = True
-    player_object["is_premium"] = True
-    player_object["premium_status"] = "premium"
-    from msm_gamedata import all_monster_ids, monster_ids_allowed_on_island
-    from msm_monsters import island_type_of, MAGICAL_NEXUS_ISLAND_TYPE, grant_full_book, repair_book_of_monsters_counts
-    for island in player_object.get("islands") or []:
-        if island is None:
-            continue
-        grant_full_book(island)
-        island_type = island_type_of(island) or 1
-        known_ids = set(island.get("book_monster_ids") or [])
-        if island_type == MAGICAL_NEXUS_ISLAND_TYPE:
-            known_ids.update(all_monster_ids())
-        else:
-            known_ids.update(monster_ids_allowed_on_island(island_type))
-        island["book_monster_ids"] = sorted(known_ids)
-        repair_book_of_monsters_counts(island)
+    return
 
 
 def save_player(username, root):
