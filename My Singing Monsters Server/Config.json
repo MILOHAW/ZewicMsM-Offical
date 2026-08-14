@@ -7,7 +7,7 @@
   "server_ip": "0.0.0.0",
   "game_port": 9933,
   "server_id": 1,
-  "files_folder": "My Singing Monsters Server\Files",
+  "files_folder": "My Singing Monsters Server\\Files",
   "content_url": "",
   "force_empty_manifest": false,
   "cors_origins": [
