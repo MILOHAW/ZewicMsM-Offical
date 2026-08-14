@@ -1,15 +1,15 @@
 {
   "host": "0.0.0.0",
   "http_ports": [
-    80,
-    9933
+    9933,
+    80
   ],
   "server_ip": "0.0.0.0",
   "game_port": 9933,
   "server_id": 1,
   "files_folder": "Files",
   "content_url": "",
-  "force_empty_manifest": true,
+  "force_empty_manifest": false,
   "cors_origins": [
     "*"
   ],
