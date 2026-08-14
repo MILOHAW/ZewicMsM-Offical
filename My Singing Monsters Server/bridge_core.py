@@ -96,12 +96,30 @@ def save_json(path, data):
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding='utf-8')
 
 def lan_ip():
-    return '10.142.0.2'
+    return '0.0.0.0'
+
+def get_local_ip():
+    """Detect the machine's local IP address that clients can connect to."""
+    import socket
+    try:
+        # Connect to a public DNS server (doesn't actually send data)
+        # This gives us the local IP that would be used for outbound connections
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        local_ip = s.getsockname()[0]
+        s.close()
+        return local_ip
+    except Exception:
+        # Fallback: try to get hostname and resolve it
+        try:
+            return socket.gethostbyname(socket.gethostname())
+        except Exception:
+            return '127.0.0.1'
 
 def config():
     _b = read_json(CONFIG_PATH, {})
     _a = False
-    _c = {'host': '10.142.0.2', 'http_ports': [5050, 8282], 'server_ip': '10.142.0.2', 'game_port': 9933, 'server_id': 1, 'files_folder': 'Files', 'content_url': '', 'force_empty_manifest': True, 'cors_origins': ['*'], 'cors_credentials': False, 'token_ttl': 900, 'auth_ttl': 1200, 'login_ttl': 7200, 'log_level': 'info'}
+    _c = {'host': '0.0.0.0', 'http_ports': [5050, 8282], 'server_ip': '0.0.0.0', 'game_port': 9933, 'server_id': 1, 'files_folder': 'Files', 'content_url': '', 'force_empty_manifest': True, 'cors_origins': ['*'], 'cors_credentials': False, 'token_ttl': 900, 'auth_ttl': 1200, 'login_ttl': 7200, 'log_level': 'info'}
     for _d, _e in _c.items():
         if _d not in _b:
             _b[_d] = _e
@@ -288,7 +306,16 @@ async def gate(request, call_next):
     _c = client_ip(request)
     if _a and _c not in _a:
         return JSONResponse({'ok': False, 'error': 'forbidden'}, status_code=403)
-    return await call_next(request)
+    _h = await call_next(request)
+    _f = str(request.url.query or '')
+    _i = request.headers.get('user-agent', '')
+    _g = request.headers.get('referer', '')
+    _b = 'yes' if request.headers.get('authorization') else 'no'
+    if _e != _d:
+        logger.info('%s %s -> %s %s ip=%s auth=%s ua=%r referer=%r query=%r', request.method, _e, _d, _h.status_code, _c, _b, _i, _g, _f)
+    else:
+        logger.info('%s %s %s ip=%s auth=%s ua=%r referer=%r query=%r', request.method, _d, _h.status_code, _c, _b, _i, _g, _f)
+    return _h
 
 async def params(request):
     _a = dict(request.query_params)
@@ -311,7 +338,13 @@ async def params(request):
     return _a
 
 def server_ip():
-    return str(SETTINGS.get('resolved_server_ip') or SETTINGS.get('server_ip') or '10.142.0.2')
+    configured_ip = str(SETTINGS.get('resolved_server_ip') or SETTINGS.get('server_ip') or '0.0.0.0')
+    # If configured to bind to all interfaces (0.0.0.0), detect the actual local IP for clients
+    if configured_ip == '0.0.0.0':
+        detected_ip = get_local_ip()
+        logger.info('server_ip: configured as 0.0.0.0, detected local IP: %s', detected_ip)
+        return detected_ip
+    return configured_ip
 
 def content_port():
     _b = SETTINGS.get('content_port')
@@ -503,10 +536,14 @@ async def game_config(request: Request):
 @app.api_route('/pregame_setup.php', methods=['GET', 'POST'])
 async def pregame_setup(request: Request):
     _c = await params(request)
+    logger.info('pregame_setup params=%s', sorted(_c.keys()))
     
-    # Use the bind host (internal IP) for file downloads
-    _bind_host = SETTINGS.get('host', '10.142.0.2')
-    _content_url = f'http://{_bind_host}{PUBLIC_CONTENT_PREFIX}'
+    # Use the detected/configured server IP for file downloads
+    _server_ip = server_ip()
+    _port = content_port()
+    _port_suffix = '' if _port == 80 else f':{_port}'
+    _content_url = f'http://{_server_ip}{_port_suffix}{PUBLIC_CONTENT_PREFIX}'
+    logger.info('pregame_setup content_url=%s server_ip=%s port=%s', _content_url, _server_ip, _port)
     
     _a = forced_account()
     _b = auth_payload(_a, ACCESS_TOKEN_FALLBACK)
@@ -517,6 +554,7 @@ async def pregame_setup(request: Request):
         'maintenance': False, 'min_version': '1.0.0',
         'files': _files, 'manifest': _files, 'downloads': _files,
     })
+    logger.info('pregame_setup returning %d files', len(_files))
     return _b
 
 def _download_manifest_path():
@@ -953,7 +991,7 @@ app.add_api_route('/{path:path}', catch_all, methods=['GET', 'POST', 'PUT', 'DEL
 async def _serve_with_retry(host, port, log_level, max_attempts=10, delay=1.0):
     last_exc = None
     for attempt in range(1, max_attempts + 1):
-        config = uvicorn.Config(app, host=host, port=port, log_level=log_level, access_log=False)
+        config = uvicorn.Config(app, host=host, port=port, log_level=log_level)
         server = uvicorn.Server(config)
         _UVICORN_SERVERS.append(server)
         try:
@@ -977,7 +1015,7 @@ async def main():
     _SHUTDOWN_REQUESTED = False
     _tasks = []
     _UVICORN_SERVERS.clear()
-    host = str(SETTINGS.get('host', '10.142.0.2'))
+    host = str(SETTINGS.get('host', '0.0.0.0'))
     log_level = str(SETTINGS.get('log_level', 'info')).lower()
     for _b in SETTINGS.get('http_ports') or [80]:
         _tasks.append(_serve_with_retry(host, int(_b), log_level))
