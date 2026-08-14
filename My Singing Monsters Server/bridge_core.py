@@ -119,7 +119,7 @@ def get_local_ip():
 def config():
     _b = read_json(CONFIG_PATH, {})
     _a = False
-    _c = {'host': '0.0.0.0', 'http_ports': [5050, 8282], 'server_ip': '0.0.0.0', 'game_port': 9933, 'server_id': 1, 'files_folder': 'Files', 'content_url': '', 'force_empty_manifest': False, 'cors_origins': ['*'], 'cors_credentials': False, 'token_ttl': 900, 'auth_ttl': 1200, 'login_ttl': 7200, 'log_level': 'info'}
+    _c = {'host': '0.0.0.0', 'http_ports': [9933, 80], 'server_ip': '0.0.0.0', 'game_port': 9933, 'server_id': 1, 'files_folder': 'My Singing Monsters Server\\Files', 'content_url': '', 'force_empty_manifest': False, 'cors_origins': ['*'], 'cors_credentials': False, 'token_ttl': 900, 'auth_ttl': 1200, 'login_ttl': 7200, 'log_level': 'info'}
     for _d, _e in _c.items():
         if _d not in _b:
             _b[_d] = _e
@@ -154,7 +154,7 @@ def _has_files(path):
 
 
 def choose_files_dir():
-    configured = str(SETTINGS.get('files_folder') or 'Files')
+    configured = str(SETTINGS.get('files_folder') or 'My Singing Monsters Server\\Files')
     bases = [
         BASE_DIR,  # Current directory of bridge_core.py
         BASE_DIR.parent,  # Parent directory (e.g. repo root)
@@ -179,6 +179,7 @@ def choose_files_dir():
 
     for root in bases:
         add(root / configured)
+        add(root / configured.replace('My Singing Monsters Server\\Files', 'Files'))
         add(root / 'Files')
         add(root / 'Data' / 'downloads')
         add(root / 'Data' / 'files')
@@ -686,6 +687,9 @@ def _download_entries():
                 })
             except Exception as e:
                 logger.debug('skipping file %s: %s', local_path, e)
+
+    if not entries:
+        logger.warning('No files discovered in asset directory %s', FILES_DIR)
     
     return entries
 
@@ -708,10 +712,26 @@ def _build_downloads_xml(entries):
 
 
 def manifest():
+    global FILES_DIR
     entries = _download_entries()
     if SETTINGS.get('force_empty_manifest'):
         logger.warning('force_empty_manifest is enabled; returning empty asset manifest for %s', FILES_DIR)
         return []
+    if not entries:
+        fallback_dirs = [
+            Path(r'E:\Next-Private-Server-main\Captures\14\Data\downloads'),
+            Path(r'E:\Next-Private-Server-main\Captures\12\com.bigbluebubble.singingmonsters.full\files'),
+            Path(r'E:\Next-Private-Server-main\Data\downloads'),
+            Path(r'E:\Next-Private-Server-main\Data\files'),
+        ]
+        for fallback in fallback_dirs:
+            if fallback.exists() and fallback.is_dir():
+                logger.warning('manifest fallback to asset bundle at %s', fallback)
+                FILES_DIR = fallback
+                FILES_DIR.mkdir(parents=True, exist_ok=True)
+                entries = _download_entries()
+                if entries:
+                    break
     return entries
 
 async def files_manifest(request: Request):
