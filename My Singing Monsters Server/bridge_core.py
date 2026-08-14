@@ -119,11 +119,19 @@ def get_local_ip():
 def config():
     _b = read_json(CONFIG_PATH, {})
     _a = False
-    _c = {'host': '0.0.0.0', 'http_ports': [5050, 8282], 'server_ip': '0.0.0.0', 'game_port': 9933, 'server_id': 1, 'files_folder': 'Files', 'content_url': '', 'force_empty_manifest': True, 'cors_origins': ['*'], 'cors_credentials': False, 'token_ttl': 900, 'auth_ttl': 1200, 'login_ttl': 7200, 'log_level': 'info'}
+    _c = {'host': '0.0.0.0', 'http_ports': [5050, 8282], 'server_ip': '0.0.0.0', 'game_port': 9933, 'server_id': 1, 'files_folder': 'Files', 'content_url': '', 'force_empty_manifest': False, 'cors_origins': ['*'], 'cors_credentials': False, 'token_ttl': 900, 'auth_ttl': 1200, 'login_ttl': 7200, 'log_level': 'info'}
     for _d, _e in _c.items():
         if _d not in _b:
             _b[_d] = _e
             _a = True
+
+    # This flag was historically used for testing and can silently break downloads.
+    # Keep the default safe for production; only allow it when explicitly opted in.
+    _allow_empty_manifest = os.environ.get('ALLOW_EMPTY_MANIFEST', '').lower() in {'1', 'true', 'yes', 'on'}
+    if _b.get('force_empty_manifest') and not _allow_empty_manifest:
+        _b['force_empty_manifest'] = False
+        _a = True
+
     if not _b.get('token_key'):
         _b['token_key'] = secrets.token_hex(8)
         _a = True
@@ -136,7 +144,73 @@ def config():
         save_json(CONFIG_PATH, _b)
     return _b
 SETTINGS = config()
-FILES_DIR = locate_child(BASE_DIR, str(SETTINGS.get('files_folder') or 'Files'), True)
+
+
+def _has_files(path):
+    try:
+        return any(child.is_file() for child in path.rglob('*'))
+    except Exception:
+        return False
+
+
+def choose_files_dir():
+    configured = str(SETTINGS.get('files_folder') or 'Files')
+    bases = [
+        BASE_DIR,  # Current directory of bridge_core.py
+        BASE_DIR.parent,  # Parent directory (e.g. repo root)
+        Path.cwd(),  # Working directory where script was launched
+        Path.home() / "ZewicMsM-Offical",  # Home directory fallback
+    ]
+    candidates = []
+    seen = set()
+
+    def add(path):
+        if not path:
+            return
+        try:
+            resolved = path.resolve()
+        except Exception:
+            resolved = path
+        key = str(resolved).lower()
+        if key in seen:
+            return
+        seen.add(key)
+        candidates.append(resolved)
+
+    for root in bases:
+        add(root / configured)
+        add(root / 'Files')
+        add(root / 'Data' / 'downloads')
+        add(root / 'Data' / 'files')
+        add(root / 'Captures' / '14' / 'Data' / 'downloads')
+        add(root / 'Captures' / '14' / 'files')
+        add(root / 'Captures' / '12' / 'com.bigbluebubble.singingmonsters.full' / 'files')
+        if root.exists():
+            for match in root.rglob('downloads.xml'):
+                add(match.parent)
+            for match in root.rglob('files'):
+                if match.is_dir():
+                    add(match)
+
+    default_dir = (BASE_DIR / configured).resolve()
+    if not candidates:
+        return default_dir
+
+    preferred = None
+    for candidate in candidates:
+        if candidate.exists() and candidate.is_dir() and _has_files(candidate):
+            preferred = candidate
+            break
+    if preferred is not None:
+        return preferred
+
+    for candidate in candidates:
+        if candidate.exists() and candidate.is_dir():
+            return candidate
+    return default_dir
+
+
+FILES_DIR = choose_files_dir()
 FILES_DIR.mkdir(parents=True, exist_ok=True)
 SFS_EXTENSION_DIR = BASE_DIR / 'SFS2X' / 'extensions' / 'MSM'
 SFS_DB_DIR = SFS_EXTENSION_DIR / 'db_files'
@@ -634,7 +708,11 @@ def _build_downloads_xml(entries):
 
 
 def manifest():
-    return _download_entries()
+    entries = _download_entries()
+    if SETTINGS.get('force_empty_manifest'):
+        logger.warning('force_empty_manifest is enabled; returning empty asset manifest for %s', FILES_DIR)
+        return []
+    return entries
 
 async def files_manifest(request: Request):
     _a = await params(request)
