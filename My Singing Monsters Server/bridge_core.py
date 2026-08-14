@@ -288,16 +288,7 @@ async def gate(request, call_next):
     _c = client_ip(request)
     if _a and _c not in _a:
         return JSONResponse({'ok': False, 'error': 'forbidden'}, status_code=403)
-    _h = await call_next(request)
-    _f = str(request.url.query or '')
-    _i = request.headers.get('user-agent', '')
-    _g = request.headers.get('referer', '')
-    _b = 'yes' if request.headers.get('authorization') else 'no'
-    if _e != _d:
-        logger.info('%s %s -> %s %s ip=%s auth=%s ua=%r referer=%r query=%r', request.method, _e, _d, _h.status_code, _c, _b, _i, _g, _f)
-    else:
-        logger.info('%s %s %s ip=%s auth=%s ua=%r referer=%r query=%r', request.method, _d, _h.status_code, _c, _b, _i, _g, _f)
-    return _h
+    return await call_next(request)
 
 async def params(request):
     _a = dict(request.query_params)
