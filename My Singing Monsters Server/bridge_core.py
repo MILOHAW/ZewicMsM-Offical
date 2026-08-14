@@ -538,12 +538,19 @@ async def pregame_setup(request: Request):
     _c = await params(request)
     logger.info('pregame_setup params=%s', sorted(_c.keys()))
     
-    # Use the detected/configured server IP for file downloads
-    _server_ip = server_ip()
-    _port = content_port()
-    _port_suffix = '' if _port == 80 else f':{_port}'
-    _content_url = f'http://{_server_ip}{_port_suffix}{PUBLIC_CONTENT_PREFIX}'
-    logger.info('pregame_setup content_url=%s server_ip=%s port=%s', _content_url, _server_ip, _port)
+    # Detect the host from the request (what address the client used to reach us)
+    _request_host = request.headers.get('host', '')
+    if _request_host:
+        # Use the host the client connected with (keeps internal/external IPs separate)
+        _content_url = f'http://{_request_host}{PUBLIC_CONTENT_PREFIX}'
+        logger.info('pregame_setup using request host: content_url=%s', _content_url)
+    else:
+        # Fallback: use configured server_ip
+        _server_ip = server_ip()
+        _port = content_port()
+        _port_suffix = '' if _port == 80 else f':{_port}'
+        _content_url = f'http://{_server_ip}{_port_suffix}{PUBLIC_CONTENT_PREFIX}'
+        logger.info('pregame_setup using server_ip: content_url=%s', _content_url)
     
     _a = forced_account()
     _b = auth_payload(_a, ACCESS_TOKEN_FALLBACK)
