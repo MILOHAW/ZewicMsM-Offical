@@ -43,11 +43,7 @@ def handle_gs_change_island(username, params):
     return result
 def handle_gs_player(username, params):
     root, player_object = load_player(username)
-    player_object["premium"] = 999_999_999
-    player_object["has_premium"] = True
-    player_object["is_premium"] = True
     for island in player_object.get("islands") or []:
-        msm_monsters.grant_full_book(island)
         msm_monsters.backfill_titansoul_state(island)
         msm_structures.backfill_awakener_structures(island)
         msm_islands.backfill_island_type(island)
@@ -510,7 +506,7 @@ def _find_session_snapshot_file():
 
 
 def restore_nextstars_player_data():
-    """Restore a known-good Nextstars snapshot from the captured session and apply debug values."""
+    """Restore a known-good Nextstars snapshot without reintroducing debug-only maxed values."""
     import json
     from pathlib import Path
 
@@ -530,26 +526,19 @@ def restore_nextstars_player_data():
             logger.warning("Restore skipped; session payload empty")
             return False
 
-        # Remove all trees from all islands
-        _remove_all_trees(player_obj)
-        
-        # Apply debug values after restoring from snapshot
-        player_obj["level"] = 100
-        player_obj["xp"] = 999_999_999
-        if "profile" in player_obj and isinstance(player_obj["profile"], dict):
-            player_obj["profile"]["level"] = 100
-        for key in ("coins", "diamonds", "food", "ethereal_currency", "keys", "relics", "egg_wildcards", "clubbox_tokens", "starpower"):
-            player_obj[key] = 999_999_999
-            player_obj[f"{key}_actual"] = 999_999_999
-        # Clear achievement post flags
-        for achievement in player_obj.get("achievements", []):
-            achievement["gp_posted"] = 0
-            achievement["fb_posted"] = 0
-            achievement["gc_posted"] = 0
+        # Strip only the debug-only values that were previously injected into the saved session.
+        for key in ("premium", "premium_status", "has_premium", "is_premium"):
+            player_obj.pop(key, None)
+        for key in ("xp", "coins", "diamonds", "food", "ethereal_currency", "keys", "relics", "egg_wildcards", "clubbox_tokens", "starpower"):
+            if isinstance(player_obj.get(key), (int, float)) and int(player_obj[key]) >= 999_000_000:
+                player_obj[key] = 0
+        for key in ("coins_actual", "diamonds_actual", "food_actual", "ethereal_currency_actual", "keys_actual", "relics_actual", "egg_wildcards_actual", "clubbox_tokens_actual", "starpower_actual"):
+            if isinstance(player_obj.get(key), (int, float)) and int(player_obj[key]) >= 999_000_000:
+                player_obj[key] = 0
 
         with player_file.open("w", encoding="utf-8") as fh:
             json.dump({"player_object": player_obj}, fh, indent=2)
-        logger.info("Recreated Nextstars.json from session snapshot with debug values applied and all trees removed")
+        logger.info("Recreated Nextstars.json from session snapshot without debug-only max values")
         return True
     except Exception as exc:
         logger.exception("Failed to recreate Nextstars.json: %s", exc)
