@@ -591,7 +591,10 @@ def handle_command(command, params, username=None):
             or "card" in command.lower()
             or "minigame" in command.lower()
             or "item" in command.lower()
+            or "quest" in command.lower()
         ):
+            if command.lower().startswith("gs_"):
+                return [(command, {"success": True, "result": []})]
             return [(command, {"success": True})]
         return []
     frames = [(command, normalize_db_payload(command, dict(data)))]
