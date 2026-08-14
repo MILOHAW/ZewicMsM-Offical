@@ -512,12 +512,18 @@ async def game_config(request: Request):
 async def pregame_setup(request: Request):
     _c = await params(request)
     logger.info('pregame_setup params=%s', sorted(_c.keys()))
-    _d = content_root()
+    
+    # Determine content URL using configured server_ip (external IP)
+    # Port 80 is preferred for file downloads (standard HTTP)
+    _server_ip = server_ip()
+    _content_url = f'http://{_server_ip}{PUBLIC_CONTENT_PREFIX}'
+    logger.info('pregame_setup content_url=%s server_ip=%s', _content_url, _server_ip)
+    
     _a = forced_account()
     _b = auth_payload(_a, ACCESS_TOKEN_FALLBACK)
     _files = manifest()
     _b.update({
-        'contentUrl': _d, 'content_url': _d, 'update_url': _d, 'download_url': _d, 'contentServer': _d,
+        'contentUrl': _content_url, 'content_url': _content_url, 'update_url': _content_url, 'download_url': _content_url, 'contentServer': _content_url,
         'force_update': False, 'force_download': False, 'skip_update': True,
         'maintenance': False, 'min_version': '1.0.0',
         'files': _files, 'manifest': _files, 'downloads': _files,
@@ -614,9 +620,12 @@ async def serve_file(path: str):
     try:
         _a.relative_to(FILES_DIR.resolve())
     except Exception:
+        logger.warning('serve_file: bad path attempt: %s', path)
         return JSONResponse({'ok': False, 'error': 'bad path'}, status_code=400)
     if not _a.is_file():
+        logger.warning('serve_file: file not found: %s (resolved: %s)', path, _a)
         return JSONResponse({'ok': False, 'error': 'not found'}, status_code=404)
+    logger.info('serve_file: serving %s', path)
     return FileResponse(_a)
 
 async def db_gs_player(request: Request):
@@ -980,7 +989,7 @@ async def main():
     _SHUTDOWN_REQUESTED = False
     _tasks = []
     _UVICORN_SERVERS.clear()
-    host = str(SETTINGS.get('host', '10.142.0.2'))
+    host = str(SETTINGS.get('host', '26.101.222.10'))
     log_level = str(SETTINGS.get('log_level', 'info')).lower()
     for _b in SETTINGS.get('http_ports') or [80]:
         _tasks.append(_serve_with_retry(host, int(_b), log_level))
