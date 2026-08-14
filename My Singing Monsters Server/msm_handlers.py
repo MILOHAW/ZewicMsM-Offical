@@ -526,7 +526,7 @@ def restore_nextstars_player_data():
             logger.warning("Restore skipped; session payload empty")
             return False
 
-        # Strip only the debug-only values that were previously injected into the saved session.
+        # Strip debug-only values and cap book ids to a sane range before writing the snapshot back.
         for key in ("premium", "premium_status", "has_premium", "is_premium"):
             player_obj.pop(key, None)
         for key in ("xp", "coins", "diamonds", "food", "ethereal_currency", "keys", "relics", "egg_wildcards", "clubbox_tokens", "starpower"):
@@ -535,6 +535,9 @@ def restore_nextstars_player_data():
         for key in ("coins_actual", "diamonds_actual", "food_actual", "ethereal_currency_actual", "keys_actual", "relics_actual", "egg_wildcards_actual", "clubbox_tokens_actual", "starpower_actual"):
             if isinstance(player_obj.get(key), (int, float)) and int(player_obj[key]) >= 999_000_000:
                 player_obj[key] = 0
+        for island in player_obj.get("islands") or []:
+            if isinstance(island, dict):
+                msm_store._sanitize_island_book_ids(island)
 
         with player_file.open("w", encoding="utf-8") as fh:
             json.dump({"player_object": player_obj}, fh, indent=2)
