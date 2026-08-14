@@ -568,7 +568,12 @@ def handle_command(command, params, username=None):
     data = load_db_json(command)
     if data is None:
         logger.info("no captured response for %s", command)
-        if "cruc" in command.lower() or "card" in command.lower():
+        if (
+            "cruc" in command.lower()
+            or "card" in command.lower()
+            or "minigame" in command.lower()
+            or "item" in command.lower()
+        ):
             return [(command, {"success": True})]
         return []
     frames = [(command, normalize_db_payload(command, dict(data)))]
