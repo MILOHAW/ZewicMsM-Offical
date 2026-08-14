@@ -512,12 +512,10 @@ async def game_config(request: Request):
 @app.api_route('/pregame_setup.php', methods=['GET', 'POST'])
 async def pregame_setup(request: Request):
     _c = await params(request)
-    logger.info('pregame_setup params=%s', sorted(_c.keys()))
     
     # Use the bind host (internal IP) for file downloads
     _bind_host = SETTINGS.get('host', '10.142.0.2')
     _content_url = f'http://{_bind_host}{PUBLIC_CONTENT_PREFIX}'
-    logger.info('pregame_setup content_url=%s bind_host=%s', _content_url, _bind_host)
     
     _a = forced_account()
     _b = auth_payload(_a, ACCESS_TOKEN_FALLBACK)
@@ -528,7 +526,6 @@ async def pregame_setup(request: Request):
         'maintenance': False, 'min_version': '1.0.0',
         'files': _files, 'manifest': _files, 'downloads': _files,
     })
-    logger.info('pregame_setup returning %d files', len(_files))
     return _b
 
 def _download_manifest_path():
