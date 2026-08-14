@@ -515,7 +515,14 @@ async def pregame_setup(request: Request):
     _d = content_root()
     _a = forced_account()
     _b = auth_payload(_a, ACCESS_TOKEN_FALLBACK)
-    _b.update({'contentUrl': _d, 'content_url': _d, 'update_url': _d, 'download_url': _d, 'contentServer': _d, 'force_update': False, 'maintenance': False, 'min_version': '1.0.0'})
+    _files = manifest()
+    _b.update({
+        'contentUrl': _d, 'content_url': _d, 'update_url': _d, 'download_url': _d, 'contentServer': _d,
+        'force_update': False, 'force_download': False, 'skip_update': True,
+        'maintenance': False, 'min_version': '1.0.0',
+        'files': _files, 'manifest': _files, 'downloads': _files,
+    })
+    logger.info('pregame_setup returning %d files', len(_files))
     return _b
 
 def _download_manifest_path():
@@ -524,32 +531,49 @@ def _download_manifest_path():
 
 def _download_entries():
     path = _download_manifest_path()
-    if not path.is_file():
-        return []
-    try:
-        root = ET.parse(path).getroot()
-    except Exception:
-        logger.exception('failed to parse bundled downloads.xml')
-        return []
     entries = []
-    for node in root.findall('.//Download'):
-        file_name = (node.get('file') or '').replace('\\', '/').lstrip('/')
-        if not file_name:
-            continue
-        local_path = (FILES_DIR / file_name).resolve()
+    
+    # Try to load from downloads.xml first
+    if path.is_file():
         try:
-            local_path.relative_to(FILES_DIR.resolve())
+            root = ET.parse(path).getroot()
+            for node in root.findall('.//Download'):
+                file_name = (node.get('file') or '').replace('\\', '/').lstrip('/')
+                if not file_name:
+                    continue
+                local_path = (FILES_DIR / file_name).resolve()
+                try:
+                    local_path.relative_to(FILES_DIR.resolve())
+                except Exception:
+                    continue
+                if not local_path.is_file():
+                    logger.warning('downloads.xml announces missing asset: %s', file_name)
+                    continue
+                checksum = hashlib.md5(local_path.read_bytes()).hexdigest()
+                entries.append({
+                    'localName': file_name,
+                    'serverName': file_name,
+                    'checksum': checksum,
+                })
         except Exception:
-            continue
-        if not local_path.is_file():
-            logger.warning('downloads.xml announces missing asset: %s', file_name)
-            continue
-        checksum = hashlib.md5(local_path.read_bytes()).hexdigest()
-        entries.append({
-            'localName': file_name,
-            'serverName': file_name,
-            'checksum': checksum,
-        })
+            logger.exception('failed to parse bundled downloads.xml')
+    
+    # Auto-discover files if manifest is empty or doesn't exist
+    if not entries and FILES_DIR.is_dir():
+        for local_path in sorted(FILES_DIR.rglob('*')):
+            if not local_path.is_file():
+                continue
+            try:
+                rel_path = local_path.relative_to(FILES_DIR).as_posix()
+                checksum = hashlib.md5(local_path.read_bytes()).hexdigest()
+                entries.append({
+                    'localName': rel_path,
+                    'serverName': rel_path,
+                    'checksum': checksum,
+                })
+            except Exception as e:
+                logger.debug('skipping file %s: %s', local_path, e)
+    
     return entries
 
 
@@ -956,7 +980,7 @@ async def main():
     _SHUTDOWN_REQUESTED = False
     _tasks = []
     _UVICORN_SERVERS.clear()
-    host = str(SETTINGS.get('host', '26.101.222.10'))
+    host = str(SETTINGS.get('host', '10.142.0.2'))
     log_level = str(SETTINGS.get('log_level', 'info')).lower()
     for _b in SETTINGS.get('http_ports') or [80]:
         _tasks.append(_serve_with_retry(host, int(_b), log_level))
