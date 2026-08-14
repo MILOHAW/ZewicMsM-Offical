@@ -483,17 +483,42 @@ def clear_structures_now():
         logger.exception("Failed to clear structures: %s", exc)
         return False
 
+def _find_session_snapshot_file():
+    """Find the newest captured session snapshot, regardless of the exact session folder name."""
+    from pathlib import Path
+
+    roots = [
+        Path(r"E:\Next-Private-Server-main"),
+        Path(__file__).resolve().parent.parent,
+        Path(__file__).resolve().parent,
+        Path.cwd(),
+    ]
+    candidates = []
+    for root in roots:
+        if not root.exists():
+            continue
+        for path in root.glob("session_*/responses/*_gs_player.json"):
+            candidates.append(path)
+        for path in root.glob("session_*/51_gs_player.json"):
+            candidates.append(path)
+        for path in root.rglob("*_gs_player.json"):
+            if "responses" in path.parts:
+                candidates.append(path)
+    if not candidates:
+        return None
+    return max(candidates, key=lambda p: p.stat().st_mtime if p.exists() else 0)
+
+
 def restore_nextstars_player_data():
     """Restore a known-good Nextstars snapshot from the captured session and apply debug values."""
     import json
     from pathlib import Path
 
-    session_dir = Path(r"E:\Next-Private-Server-main\session_1786655153_16863")
-    session_file = session_dir / "responses" / "51_gs_player.json"
+    session_file = _find_session_snapshot_file()
     player_file = Path(r"e:\Next-Private-Server-main\My Singing Monsters Server\SFS2X\extensions\MSM\players\Nextstars.json")
 
-    if not session_file.exists():
-        logger.warning("Restore skipped; session snapshot missing: %s", session_file)
+    if not session_file or not session_file.exists():
+        logger.warning("Restore skipped; session snapshot missing under project root")
         return False
 
     try:
