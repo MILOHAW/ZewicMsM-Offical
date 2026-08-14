@@ -19,6 +19,7 @@ _UNCACHED_DB_NAMES = {"gs_timed_events"}
 def _candidate_db_dirs():
     seen = set()
     candidates = []
+    base_dir = Path(__file__).resolve().parent
 
     def add(path):
         if path is None:
@@ -29,13 +30,12 @@ def _candidate_db_dirs():
         seen.add(resolved)
         candidates.append(resolved)
 
-    add(Path(r"E:\Next-Private-Server-main\Data\db_files"))
-    add(Path(r"D:\Next-Private-Server-main\Data\db_files"))
-    add(db_dir if db_dir is not None else Path(r"E:\Next-Private-Server-main\My Singing Monsters Server\SFS2X\extensions\MSM\db_files"))
-    add(Path(r"E:\Next-Private-Server-main\My Singing Monsters Server\SFS2X\extensions\MSM\db_files"))
-    add(Path(r"D:\Next-Private-Server-main\My Singing Monsters Server\SFS2X\extensions\MSM\db_files"))
-    add(Path(r"D:\Next-Private-Server-main\My Singing Monsters Server\db_files"))
-    add(Path(r"E:\Next-Private-Server-main\My Singing Monsters Server\db_files"))
+    add(base_dir / "db_files")
+    add(base_dir / "Data" / "db_files")
+    add(base_dir.parent / "Data" / "db_files")
+    add(base_dir.parent / "db_files")
+    if db_dir is not None:
+        add(Path(db_dir))
     return candidates
 
 
@@ -77,6 +77,7 @@ def normalize_db_payload(command, payload):
 def _candidate_players_dirs():
     seen = set()
     candidates = []
+    base_dir = Path(__file__).resolve().parent
 
     def add(path):
         if path is None:
@@ -87,11 +88,12 @@ def _candidate_players_dirs():
         seen.add(resolved)
         candidates.append(resolved)
 
-    add(players_dir if players_dir is not None else Path(r"E:\Next-Private-Server-main\My Singing Monsters Server\SFS2X\extensions\MSM\players"))
-    add(Path(r"E:\Next-Private-Server-main\My Singing Monsters Server\SFS2X\extensions\MSM\players"))
-    add(Path(r"D:\Next-Private-Server-main\My Singing Monsters Server\SFS2X\extensions\MSM\players"))
-    add(Path(r"E:\Next-Private-Server-main\Captures"))
-    add(Path(r"D:\Next-Private-Server-main\My Singing Monsters Server\players"))
+    add(base_dir / "SFS2X" / "extensions" / "MSM" / "players")
+    add(base_dir / "players")
+    add(base_dir.parent / "Captures")
+    add(base_dir.parent / "players")
+    if players_dir is not None:
+        add(Path(players_dir))
     return candidates
 
 
@@ -99,7 +101,7 @@ def _player_file(username):
     if players_dir is None:
         raise RuntimeError("msm_store.players_dir not configured")
     return Path(players_dir) / f"{username}.json"
-
+ 
 
 def _normalize_player_account(root):
     if not isinstance(root, dict):
