@@ -1,0 +1,61 @@
+{
+  "server_time": 1781368365484,
+  "numChunks": 10,
+  "last_updated": 1781095454000,
+  "monsters_data": [
+    {
+      "cost_coins": 3000000,
+      "select_sound": "Z10-Memory",
+      "cost_keys": 0,
+      "portrait_graphic": "monster_portrait_square_z10",
+      "size_y": 2,
+      "size_x": 2,
+      "build_time": 14400,
+      "description": "MONSTER_Z10_DESC",
+      "y_offset": 145,
+      "cost_sale": 0,
+      "view_in_market": 1,
+      "premium": 0,
+      "fam": "CLASS_PAIRONORMAL",
+      "happiness": [],
+      "view_in_starmarket": 0,
+      "cost_relics": 0,
+      "common_name": "Z10",
+      "min_server_version": "5.6.0",
+      "graphic": {
+        "file": "monster_z10.bin"
+      },
+      "class": "CLASS_PAIRONORMAL",
+      "requirements": [],
+      "genes": "3",
+      "level": 23,
+      "time_availability": 255,
+      "cost_diamonds": 3000,
+      "entity_id": 2063,
+      "cost_starpower": 0,
+      "discovered_by": "Z10",
+      "entity_type": "monster",
+      "cost_medals": 0,
+      "movable": 1,
+      "names": ["Z10", "Z10", "Z10", "Z10", "Z10", "Z10", "Z10", "Z10", "Z10", "Z10"],
+      "cost_eth_currency": 0,
+      "monster_id": 992,
+      "time_to_fill_sec": -1,
+      "name": "MONSTER_Z10",
+      "xp": 900000,
+      "spore_graphic": "spore_Z10",
+      "beds": 1,
+      "levelup_island": "none",
+      "levels": [
+        {"ethereal_currency": 0, "max_coins": 0, "level": 1, "coins": 0, "max_ethereal": 0, "food": 88},
+        {"ethereal_currency": 0, "max_coins": 0, "level": 2, "coins": 0, "max_ethereal": 0, "food": 176},
+        {"ethereal_currency": 0, "max_coins": 0, "level": 3, "coins": 0, "max_ethereal": 0, "food": 352},
+        {"ethereal_currency": 0, "max_coins": 0, "level": 4, "coins": 0, "max_ethereal": 0, "food": 704},
+        {"ethereal_currency": 0, "max_coins": 0, "level": 5, "coins": 0, "max_ethereal": 0, "food": 1408},
+        {"ethereal_currency": 0, "max_coins": 0, "level": 6, "coins": 0, "max_ethereal": 0, "food": 2816},
+        {"ethereal_currency": 0, "max_coins": 0, "level": 7, "coins": 0, "max_ethereal": 0, "food": 5632},
+        {"ethereal_currency": 0, "max_coins": 0, "level": 8, "coins": 0, "max_ethereal": 0, "food": 11264}
+      ]
+    }
+  ]
+}
