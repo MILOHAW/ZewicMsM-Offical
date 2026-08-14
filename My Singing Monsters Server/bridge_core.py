@@ -96,12 +96,12 @@ def save_json(path, data):
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding='utf-8')
 
 def lan_ip():
-    return '26.101.222.10'
+    return '10.142.0.2'
 
 def config():
     _b = read_json(CONFIG_PATH, {})
     _a = False
-    _c = {'host': '26.101.222.10', 'http_ports': [5050, 8282], 'server_ip': '26.101.222.10', 'game_port': 9933, 'server_id': 1, 'files_folder': 'Files', 'content_url': '', 'force_empty_manifest': True, 'cors_origins': ['*'], 'cors_credentials': False, 'token_ttl': 900, 'auth_ttl': 1200, 'login_ttl': 7200, 'log_level': 'info'}
+    _c = {'host': '10.142.0.2', 'http_ports': [5050, 8282], 'server_ip': '10.142.0.2', 'game_port': 9933, 'server_id': 1, 'files_folder': 'Files', 'content_url': '', 'force_empty_manifest': True, 'cors_origins': ['*'], 'cors_credentials': False, 'token_ttl': 900, 'auth_ttl': 1200, 'login_ttl': 7200, 'log_level': 'info'}
     for _d, _e in _c.items():
         if _d not in _b:
             _b[_d] = _e
@@ -320,7 +320,7 @@ async def params(request):
     return _a
 
 def server_ip():
-    return str(SETTINGS.get('resolved_server_ip') or SETTINGS.get('server_ip') or '26.101.222.10')
+    return str(SETTINGS.get('resolved_server_ip') or SETTINGS.get('server_ip') or '10.142.0.2')
 
 def content_port():
     _b = SETTINGS.get('content_port')
@@ -989,7 +989,7 @@ async def main():
     _SHUTDOWN_REQUESTED = False
     _tasks = []
     _UVICORN_SERVERS.clear()
-    host = str(SETTINGS.get('host', '26.101.222.10'))
+    host = str(SETTINGS.get('host', '10.142.0.2'))
     log_level = str(SETTINGS.get('log_level', 'info')).lower()
     for _b in SETTINGS.get('http_ports') or [80]:
         _tasks.append(_serve_with_retry(host, int(_b), log_level))
