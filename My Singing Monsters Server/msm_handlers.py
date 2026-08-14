@@ -563,8 +563,6 @@ def handle_command(command, params, username=None):
         return handle_login(params)
     if command == "USER_LOGOUT":
         return handle_logout(params)
-    if command == "gs_quest":
-        return [("gs_quest", {"success": True, "result": []})]
     aliased_command = _STATIC_ALIAS_RESPONSES.get(command)
     if aliased_command is not None:
         data = load_db_json(aliased_command)
