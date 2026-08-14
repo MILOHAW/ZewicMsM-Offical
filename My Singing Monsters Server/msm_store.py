@@ -39,14 +39,42 @@ def _candidate_db_dirs():
     return candidates
 
 
+def _candidate_session_response_dirs():
+    seen = set()
+    candidates = []
+    base_dir = Path(__file__).resolve().parent.parent
+
+    def add(path):
+        if path is None:
+            return
+        resolved = Path(path).resolve()
+        if resolved in seen:
+            return
+        seen.add(resolved)
+        candidates.append(resolved)
+
+    for session_dir in sorted(base_dir.glob("session_*"), key=lambda p: p.name):
+        add(session_dir / "responses")
+    return candidates
+
+
+def _find_capture_file(name):
+    for directory in _candidate_db_dirs() + _candidate_session_response_dirs():
+        exact = directory / f"{name}.json"
+        if exact.exists():
+            return exact
+        matches = sorted(directory.glob(f"*_{name}.json"), key=lambda p: p.stat().st_mtime)
+        if matches:
+            return matches[-1]
+    return None
+
+
 def load_db_json(name):
     if name in _db_cache:
         return _db_cache[name]
 
-    for directory in _candidate_db_dirs():
-        path = directory / f"{name}.json"
-        if not path.exists():
-            continue
+    path = _find_capture_file(name)
+    if path is not None:
         try:
             with path.open("r", encoding="utf-8-sig") as fh:
                 data = json.load(fh)
@@ -55,9 +83,10 @@ def load_db_json(name):
                 return None
             _db_cache[name] = None
             return None
+        payload = data.get("payload") if isinstance(data, dict) and "payload" in data else data
         if name not in _UNCACHED_DB_NAMES:
-            _db_cache[name] = data
-        return data
+            _db_cache[name] = payload
+        return payload
 
     if name in _UNCACHED_DB_NAMES:
         return None
