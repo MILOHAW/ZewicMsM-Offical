@@ -6,6 +6,7 @@ import msm_islands
 import msm_monsters
 import msm_rewards
 import msm_rewardtracks
+import msm_store
 import msm_structures
 import msm_synthesis
 from msm_playerdata import add_actual_currencies, coerce_wire_types, create_player_properties, load_player
