@@ -103,6 +103,32 @@ def _player_file(username):
     return Path(players_dir) / f"{username}.json"
  
 
+def _sanitize_debug_player_data(player_object):
+    if not isinstance(player_object, dict):
+        return
+
+    for key in ("premium", "premium_status", "has_premium", "is_premium"):
+        if key in player_object:
+            value = player_object.get(key)
+            if key == "premium" and isinstance(value, (int, float)) and int(value) >= 999_000_000:
+                player_object.pop(key, None)
+                continue
+            if key in {"has_premium", "is_premium"} and value is True:
+                player_object.pop(key, None)
+                continue
+            if key == "premium_status" and value == "premium":
+                player_object.pop(key, None)
+                continue
+
+    for key in ("xp", "coins", "diamonds", "food", "ethereal_currency", "keys", "relics", "egg_wildcards", "clubbox_tokens", "starpower"):
+        if key in player_object and isinstance(player_object.get(key), (int, float)) and int(player_object[key]) >= 999_000_000:
+            player_object[key] = 0
+
+    for key in ("coins_actual", "diamonds_actual", "food_actual", "ethereal_currency_actual", "keys_actual", "relics_actual", "egg_wildcards_actual", "clubbox_tokens_actual", "starpower_actual"):
+        if key in player_object and isinstance(player_object.get(key), (int, float)) and int(player_object[key]) >= 999_000_000:
+            player_object[key] = 0
+
+
 def _normalize_player_account(root):
     if not isinstance(root, dict):
         return root
@@ -110,23 +136,7 @@ def _normalize_player_account(root):
     if not isinstance(player_object, dict):
         return root
 
-    player_object["premium"] = 999_999_999
-    player_object["has_premium"] = True
-    player_object["is_premium"] = True
-    player_object["premium_status"] = "premium"
-
-    try:
-        from msm_gamedata import all_monster_ids, monster_ids_allowed_on_island
-        from msm_monsters import MAGICAL_NEXUS_ISLAND_TYPE, grant_full_book, island_type_of, repair_book_of_monsters_counts
-    except Exception:
-        return root
-
-    for island in player_object.get("islands") or []:
-        if not isinstance(island, dict):
-            continue
-        grant_full_book(island)
-        island["book_value"] = 3334
-
+    _sanitize_debug_player_data(player_object)
     return root
 
 
