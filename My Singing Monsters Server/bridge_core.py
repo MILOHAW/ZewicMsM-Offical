@@ -457,7 +457,7 @@ def game_config_block():
     _c = sfs_block()
     _b = content_root()
     _a = [{'type': 'email', 'login_type': 'email', 'auth_type': 'email', 'auto_create': False, 'can_bind_to': True, 'can_create': True, 'enabled': True}]
-    return {'login_types': _a, 'loginConfigs': _a, 'login_configs': _a, 'type': 'android', 'platform': 'android', 'store': 'android', 'package': 'com.bigbluebubble.singingmonsters.full', 'game_version': '5.4.2', 'client_version': '5.4.2', 'assets_version': '494', 'build': '494', 'contentUrl': _b, 'content_url': _b, 'update_url': _b, 'download_url': _b, 'precheck': True, 'precheck_required': True, 'precheck_db': 'db_precheck', 'precheckDb': 'db_precheck', 'precheck_databases': ['db_precheck'], 'precheckDatabases': ['db_precheck'], 'startup_databases': ['db_precheck'], 'startupDatabases': ['db_precheck'], 'direct-placement': True, 'server': _c, 'sfs': _c, 'game_server': _c, 'gameServer': _c, 'smartfox': _c, 'smartFox': _c, 'connection': _c, 'connectionInfo': _c, 'connection_info': _c, 'socket': _c, 'socketServer': _c, 'socket_server': _c, 'servers': [_c], 'server_list': [_c], 'serverList': [_c], 'sfs_servers': [_c], 'sfsServers': [_c], **_c}
+    return {'login_types': _a, 'loginConfigs': _a, 'login_configs': _a, 'type': 'android', 'platform': 'android', 'store': 'android', 'package': 'com.bigbluebubble.singingmonsters.full', 'game_version': '5.4.2', 'client_version': '5.4.2', 'assets_version': '494', 'build': '494', 'contentUrl': _b, 'content_url': _b, 'update_url': _b, 'download_url': _b, 'precheck': False, 'precheck_required': False, 'precheck_db': 'db_precheck', 'precheckDb': 'db_precheck', 'precheck_databases': ['db_precheck'], 'precheckDatabases': ['db_precheck'], 'startup_databases': ['db_precheck'], 'startupDatabases': ['db_precheck'], 'direct-placement': True, 'server': _c, 'sfs': _c, 'game_server': _c, 'gameServer': _c, 'smartfox': _c, 'smartFox': _c, 'connection': _c, 'connectionInfo': _c, 'connection_info': _c, 'socket': _c, 'socketServer': _c, 'socket_server': _c, 'servers': [_c], 'server_list': [_c], 'serverList': [_c], 'sfs_servers': [_c], 'sfsServers': [_c], **_c}
 
 def auth_payload(account, access_token):
     _d = str(account.get('user_id', DEFAULT_ACCOUNT['user_id']))
@@ -632,7 +632,7 @@ async def pregame_setup(request: Request):
     _files = manifest()
     _b.update({
         'contentUrl': _content_url, 'content_url': _content_url, 'update_url': _content_url, 'download_url': _content_url, 'contentServer': _content_url,
-        'force_update': False, 'force_download': False, 'skip_update': True,
+        'force_update': False, 'force_download': False, 'skip_update': True, 'precheck': False, 'precheck_required': False,
         'maintenance': False, 'min_version': '1.0.0',
         'files': _files, 'manifest': _files, 'downloads': _files,
     })
