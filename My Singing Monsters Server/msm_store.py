@@ -103,6 +103,38 @@ def _player_file(username):
     return Path(players_dir) / f"{username}.json"
  
 
+def _sanitize_island_book_ids(island):
+    if not isinstance(island, dict):
+        return
+    collected = set()
+    for monster in island.get("monsters") or []:
+        if not isinstance(monster, dict):
+            continue
+        value = monster.get("monster") or monster.get("monster_id") or 0
+        try:
+            monster_id = int(value)
+        except Exception:
+            continue
+        if monster_id > 0:
+            collected.add(monster_id)
+
+    existing = island.get("book_monster_ids") or []
+    if isinstance(existing, list):
+        for entry in existing:
+            try:
+                monster_id = int(entry)
+            except Exception:
+                continue
+            if monster_id > 0:
+                collected.add(monster_id)
+
+    cleaned = {monster_id for monster_id in collected if 1 <= int(monster_id) <= 2000}
+    if not cleaned:
+        island["book_monster_ids"] = []
+    else:
+        island["book_monster_ids"] = sorted(cleaned)
+
+
 def _sanitize_debug_player_data(player_object):
     if not isinstance(player_object, dict):
         return
@@ -127,6 +159,9 @@ def _sanitize_debug_player_data(player_object):
     for key in ("coins_actual", "diamonds_actual", "food_actual", "ethereal_currency_actual", "keys_actual", "relics_actual", "egg_wildcards_actual", "clubbox_tokens_actual", "starpower_actual"):
         if key in player_object and isinstance(player_object.get(key), (int, float)) and int(player_object[key]) >= 999_000_000:
             player_object[key] = 0
+
+    for island in player_object.get("islands") or []:
+        _sanitize_island_book_ids(island)
 
 
 def _normalize_player_account(root):
