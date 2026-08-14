@@ -962,7 +962,7 @@ app.add_api_route('/{path:path}', catch_all, methods=['GET', 'POST', 'PUT', 'DEL
 async def _serve_with_retry(host, port, log_level, max_attempts=10, delay=1.0):
     last_exc = None
     for attempt in range(1, max_attempts + 1):
-        config = uvicorn.Config(app, host=host, port=port, log_level=log_level)
+        config = uvicorn.Config(app, host=host, port=port, log_level=log_level, access_log=False)
         server = uvicorn.Server(config)
         _UVICORN_SERVERS.append(server)
         try:
