@@ -509,15 +509,15 @@ async def game_config(request: Request):
     return auth_payload(_a, ACCESS_TOKEN_FALLBACK)
 
 @app.api_route('/pregame_setup.php', methods=['GET', 'POST'])
+@app.api_route('/pregame_setup.php', methods=['GET', 'POST'])
 async def pregame_setup(request: Request):
     _c = await params(request)
     logger.info('pregame_setup params=%s', sorted(_c.keys()))
     
-    # Determine content URL using configured server_ip (external IP)
-    # Port 80 is preferred for file downloads (standard HTTP)
-    _server_ip = server_ip()
-    _content_url = f'http://{_server_ip}{PUBLIC_CONTENT_PREFIX}'
-    logger.info('pregame_setup content_url=%s server_ip=%s', _content_url, _server_ip)
+    # Use the bind host (internal IP) for file downloads
+    _bind_host = SETTINGS.get('host', '10.142.0.2')
+    _content_url = f'http://{_bind_host}{PUBLIC_CONTENT_PREFIX}'
+    logger.info('pregame_setup content_url=%s bind_host=%s', _content_url, _bind_host)
     
     _a = forced_account()
     _b = auth_payload(_a, ACCESS_TOKEN_FALLBACK)
